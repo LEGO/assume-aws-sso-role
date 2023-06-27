@@ -24,8 +24,8 @@ if [ $result -ne 0 ]; then
 	exit result
 fi
 
-result=$?
 token=$(az account get-access-token --resource api://$saml2oidc --query accessToken --output tsv)
+result=$?
 if [ $result -ne 0 ]; then
 	echo >&2 "Error fetching token from AzureAD"
 	exit result
@@ -38,4 +38,4 @@ if [ $result -ne 0 ]; then
 	exit result
 fi
 
-aws sts assume-role-with-saml --role-arn $role --principal-arn $provider --saml-assertion $saml | jq ".Credentials" | jq ".Version = 1"
+env -u AWS_PROFILE aws sts assume-role-with-saml --no-sign-request --role-arn $role --principal-arn $provider --saml-assertion $saml --query "Credentials" | jq ".Version = 1"
