@@ -1,15 +1,31 @@
 #!/usr/bin/env sh
 
-awsaccount=$1
-awsrole=$2
+saml2oidc="3cd4d944-d89b-401b-b2ae-fb1ece182362"
+tenant="1d063515-6cad-4195-9486-ea65df456faa"
+
+credentials_path=${XDG_CACHE_HOME:-"$HOME/cache"}/aws_az_credentials/
+mkdir -p $credentials_path
+
+awsaccount="$1"
+awsrole="$2"
 
 if [ -z $awsaccount ] || [ -z $awsrole ]; then
 	echo "Usage $0 <account> <role>"
 	exit 1
 fi
 
-tenant="1d063515-6cad-4195-9486-ea65df456faa"
-saml2oidc="3cd4d944-d89b-401b-b2ae-fb1ece182362"
+credentials_file=$credentials_path/$awsaccount-$awsrole.creds
+
+creds=$(cat $credentials_file 2>/dev/null)
+if [ ! -z "$creds" ]; then
+	expiration=$(echo $creds | jq -r ".Expiration")
+	expireInSeconds=$(gdate -d "$expiration" "+%s")
+	nowInSeconds=$(gdate "+%s")
+	if [[ $expireInSeconds -gt $nowInSeconds ]]; then
+		echo $creds
+		exit 0
+	fi
+fi
 
 awssso="https://signin.aws.amazon.com/saml/$awsaccount"
 role="arn:aws:iam::$awsaccount:role/$awsrole"
@@ -38,4 +54,6 @@ if [ $result -ne 0 ]; then
 	exit result
 fi
 
-env -u AWS_PROFILE aws sts assume-role-with-saml --no-sign-request --role-arn $role --principal-arn $provider --saml-assertion $saml --query "Credentials" | jq ".Version = 1"
+creds=$(env -u AWS_PROFILE aws sts assume-role-with-saml --no-sign-request --role-arn $role --principal-arn $provider --saml-assertion $saml --query "Credentials" | jq ".Version = 1")
+echo $creds >$credentials_file
+echo $creds
