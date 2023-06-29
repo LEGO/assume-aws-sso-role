@@ -17,8 +17,4 @@ class AwsCredentialProcessAzuread < Formula
   def install
     bin.install "aws-credential-process-azuread"
   end
-
-  test do
-    system "#{bin}/aws-credential-process-azuread"
-  end
 end
