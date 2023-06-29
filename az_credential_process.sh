@@ -1,4 +1,4 @@
-#!/usr/bin/env sh
+#!/usr/bin/env bash
 
 saml2oidc="3cd4d944-d89b-401b-b2ae-fb1ece182362"
 tenant="1d063515-6cad-4195-9486-ea65df456faa"
