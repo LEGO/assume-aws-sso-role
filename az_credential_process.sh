@@ -19,8 +19,8 @@ credentials_file=$credentials_path/$awsaccount-$awsrole.creds
 creds=$(cat $credentials_file 2>/dev/null)
 if [ ! -z "$creds" ]; then
 	expiration=$(echo $creds | jq -r ".Expiration")
-	expireInSeconds=$(gdate -d "$expiration" "+%s")
-	nowInSeconds=$(gdate "+%s")
+	expireInSeconds=$(date -d "$expiration" "+%s" 2>/dev/null || gdate -d "$expiration" "+%s")
+	nowInSeconds=$(date "+%s")
 	if [[ $expireInSeconds -gt $nowInSeconds ]]; then
 		echo $creds
 		exit 0
