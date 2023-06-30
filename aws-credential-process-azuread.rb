@@ -5,7 +5,7 @@ class AwsCredentialProcessAzuread < Formula
 
   github_token = ENV["HOMEBREW_GITHUB_API_TOKEN"]
   unless github_token
-    raise DownloadError, "Environment variable HOMEBREW_GITHUB_API_TOKEN is required."
+    odie "Environment variable HOMEBREW_GITHUB_API_TOKEN is required."
   end
 
   url "https://raw.githubusercontent.com/LEGO/aws-credential-process-azuread/main/aws-credential-process-azuread",
