@@ -1,6 +1,6 @@
 ## Installation
 
-If you are on a mac, you can install the latest version of `amma-cli` using [Homebrew](https://brew.sh/), assuming you have SSH keys set up for accessing private LEGO repositories on GitHub:
+If you are on a mac, you can install the latest version of `aws-credential-process-azuread` using [Homebrew](https://brew.sh/), assuming you have SSH keys set up for accessing private LEGO repositories on GitHub:
 
 ```bash
 export HOMEBREW_GITHUB_API_TOKEN=$(gh auth token)
