@@ -1,18 +1,18 @@
 class AwsCredentialProcessAzuread < Formula
   desc "An AWS credential process that uses AzureAD"
   homepage "https://github.com/LEGO/aws-credential-process-azuread"
-  version "0.2.0"
+  version "0.3.0"
 
   github_token = ENV["HOMEBREW_GITHUB_API_TOKEN"]
   unless github_token
     odie "Environment variable HOMEBREW_GITHUB_API_TOKEN is required."
   end
 
-  url "https://raw.githubusercontent.com/LEGO/aws-credential-process-azuread/blob/v0.2.0/aws-credential-process-azuread",
+  url "https://raw.githubusercontent.com/LEGO/aws-credential-process-azuread/v0.3.0/aws-credential-process-azuread",
     headers: [
       "Authorization: token #{github_token}"
     ]
-  sha256 "90bac6a03c6dfd9e191c439ec90def673b1246b13e2b7c45467ac2b72ece1d31"
+  sha256 "4f15e7294308692eb20cc3ce4bb922fff01fd777d2c9107f22e18aaa980d4e6a"
 
   def install
     bin.install "aws-credential-process-azuread"
