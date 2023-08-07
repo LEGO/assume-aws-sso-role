@@ -101,6 +101,9 @@ load_credentials_from_file() {
     if [ ${expiration_in_seconds} -gt ${now_in_seconds} ]; then
         output_from_credentials "${credentials}"
         echo_maybe Credentials expires at $(local_time_for ${expiration})
+        return 0
+    else
+        return 1
     fi
 }
 
@@ -234,10 +237,12 @@ credentials_file=$credentials_path/$aws_account-$aws_role.creds
 if [ -f "${credentials_file}" ]; then
     echo_maybe Loading credentials from file
     load_credentials_from_file
-    if [ ${sourced} = 0 ]; then
-        exit 0
-    else
-        return 0
+    if [ $? = 0 ]; then
+        if [ ${sourced} = 0 ]; then
+            exit 0
+        else
+            return 0
+        fi
     fi
 fi
 
