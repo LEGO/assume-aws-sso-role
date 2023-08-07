@@ -20,6 +20,7 @@ aws_profile=
 aws_role=
 aws_account=
 aws_role=
+aws_session_duration=3600
 
 mkdir -p ${credentials_path}
 
@@ -119,6 +120,8 @@ Common options:
     -e: The region to use. If this is supplied then it overrides any region
         supplied in the AWS config file (see below).
 
+    -d: The AWS session duration in seconds. Defaults to 3600 seconds (1 hour).
+
 Supply account number and role to assume
 
     -a: Account number
@@ -156,7 +159,7 @@ function help()
 }
 
 OPTIND=1
-while getopts "hjqa:r:p:e:" option; do
+while getopts "hjqa:d:r:p:e:" option; do
     case "${option}" in
         h)
             help
@@ -174,6 +177,9 @@ while getopts "hjqa:r:p:e:" option; do
             ;;
         a)
             aws_account=$OPTARG
+            ;;
+        d)
+            aws_session_duration=$OPTARG
             ;;
         r)
             aws_role=$OPTARG
@@ -280,7 +286,7 @@ echo_maybe SAML token is $saml_token
 
 # Assume role in AWS
 echo_maybe Assuming role in AWS using role ARN ${aws_role_arn} and principal ${aws_provider}
-aws_token=$(env -u AWS_PROFILE aws sts assume-role-with-saml --region ${aws_region} --role-arn "$aws_role_arn" --principal-arn "$aws_provider" --saml-assertion "$saml_token" --query "Credentials" | jq ".Version = 1")
+aws_token=$(env -u AWS_PROFILE aws sts assume-role-with-saml --duration-seconds ${aws_session_duration} --region ${aws_region} --role-arn "$aws_role_arn" --principal-arn "$aws_provider" --saml-assertion "$saml_token" --query "Credentials" | jq ".Version = 1")
 if [ $? != 0 ]; then
     >&2 echo Acquire AWS token failed
     if [ ${sourced} = 0 ]; then
