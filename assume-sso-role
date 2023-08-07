@@ -30,9 +30,13 @@ echo_maybe() {
     fi
 }
 
+iso_8601_to_rfc_822_date() {
+    echo "$1" | sed -E 's/\+([[:digit:]][[:digit:]]):([[:digit:]][[:digit:]])/+\1\2/'
+}
+
 date_to_seconds() {
     if [ ${platform} = Darwin ]; then
-        date -u -j -f "%FT%T" "$1" "+%s" 2>/dev/null
+        date -j -f "%FT%T%z" $(iso_8601_to_rfc_822_date $1) "+%s"
     else
         date -d "$1" "+%s" 2>/dev/null || gdate -d "$expiration" "+%s"
     fi
@@ -41,9 +45,9 @@ date_to_seconds() {
 local_time_for() {
     time_and_date_in_seconds=$(date_to_seconds $1)
     if [ ${platform} = Darwin ]; then
-        echo $(date -j -f "%s" ${time_and_date_in_seconds})
+        echo $(date -j -f "%FT%T%z" $(iso_8601_to_rfc_822_date $1))
     else
-        echo $(date -d "@${time_and_date_in_seconds}")
+        echo $(date -d "$1")
     fi
 }
 
