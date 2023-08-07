@@ -45,9 +45,9 @@ date_to_seconds() {
 local_time_for() {
     time_and_date_in_seconds=$(date_to_seconds $1)
     if [ ${platform} = Darwin ]; then
-        echo $(date -j -f "%FT%T%z" $(iso_8601_to_rfc_822_date $1))
+        date -j -f "%FT%T%z" $(iso_8601_to_rfc_822_date $1)
     else
-        echo $(date -d "$1")
+        date -d "$1"
     fi
 }
 
