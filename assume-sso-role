@@ -236,24 +236,18 @@ if [ -f "${credentials_file}" ]; then
 fi
 
 if [ -z "${aws_region}" ]; then
-    if [ "${quiet}" = false ]; then
-        >&2 echo Region for not supplied. Using ${DEFAULT_REGION}.
-    fi
+    echo_maybe "Region for not supplied. Using ${DEFAULT_REGION}."
     aws_region=${DEFAULT_REGION}
 fi
 
-if [ "${quiet}" = false ]; then
-    >&2 echo Region is ${aws_region}
-    >&2 echo Role arn is ${aws_role_arn}
-    >&2 echo Aws account is ${aws_account}
-fi
+echo_maybe Region is ${aws_region}
+echo_maybe Role arn is ${aws_role_arn}
+echo_maybe Aws account is ${aws_account}
 
 aws_provider="arn:aws:iam::${aws_account}:saml-provider/AzureAD"
 
 # Obtain token for OIDCtoSAML endpoint
-if [ "${quiet}" = false ]; then
-    >&2 echo Getting access token
-fi
+echo_maybe Getting access token
 access_token=$(az account get-access-token --resource ${az_access_token_api} --query accessToken --output tsv)
 if [ $? != 0 ]; then
     echo_maybe "Fetching access token failed. Attempting new log in."
