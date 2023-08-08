@@ -83,13 +83,13 @@ set_account_and_role_from_role_arn() {
 
 role_info_from_profile() {
     if [ -z "${aws_region}" ]; then
-        aws_region=$(aws configure get ${aws_profile}.region)
+        aws_region=$(aws configure get region --profile ${aws_profile})
     fi
     if [ -z "${aws_region}" ]; then
         echo_maybe "Region not found in profile ${aws_profile}."
     fi
 
-    aws_role_arn=$(aws configure get ${aws_profile}.role_arn)
+    aws_role_arn=$(aws configure get role_arn --profile ${aws_profile})
     result=$?
     if [ ${result} -ne 0 ]; then
         return 1
