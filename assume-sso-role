@@ -53,7 +53,7 @@ local_time_for() {
 
 output_from_credentials() {
     if [ ${action} = set_env_vars ]; then
-        echo_maybe Setting environment variables
+        echo_maybe "Setting environment variables"
         export AWS_ACCESS_KEY_ID=$(echo $1 | jq -r '.AccessKeyId')
         export AWS_SECRET_ACCESS_KEY=$(echo $1 | jq -r '.SecretAccessKey')
         export AWS_SESSION_TOKEN=$(echo $1 | jq -r '.SessionToken')
@@ -104,7 +104,7 @@ load_credentials_from_file() {
     now_in_seconds=$(date "+%s")
     if [ ${expiration_in_seconds} -gt ${now_in_seconds} ]; then
         output_from_credentials "${credentials}"
-        echo_maybe Credentials expires at $(local_time_for ${expiration})
+        echo_maybe "Credentials expires at $(local_time_for ${expiration})"
         return 0
     else
         return 1
@@ -239,7 +239,7 @@ fi
 
 credentials_file=$credentials_path/$aws_account-$aws_role.creds
 if [ -f "${credentials_file}" ]; then
-    echo_maybe Loading credentials from file
+    echo_maybe "Loading credentials from file"
     load_credentials_from_file
     if [ $? = 0 ]; then
         if [ ${sourced} = 0 ]; then
@@ -251,18 +251,18 @@ if [ -f "${credentials_file}" ]; then
 fi
 
 if [ -z "${aws_region}" ]; then
-    echo_maybe "Region for not supplied. Using ${DEFAULT_REGION}."
+    echo_maybe "Region not supplied. Using ${DEFAULT_REGION}."
     aws_region=${DEFAULT_REGION}
 fi
 
-echo_maybe Region is ${aws_region}
-echo_maybe Role arn is ${aws_role_arn}
-echo_maybe Aws account is ${aws_account}
+echo_maybe "Region is ${aws_region}"
+echo_maybe "Role arn is ${aws_role_arn}"
+echo_maybe "Aws account is ${aws_account}"
 
 aws_provider="arn:aws:iam::${aws_account}:saml-provider/AzureAD"
 
 # Obtain token for OIDCtoSAML endpoint
-echo_maybe Getting access token
+echo_maybe "Getting access token"
 access_token=$(az account get-access-token --resource ${az_access_token_api} --query accessToken --output tsv)
 if [ $? != 0 ]; then
     echo_maybe "Fetching access token failed. Attempting new log in."
@@ -275,7 +275,7 @@ if [ $? != 0 ]; then
             return 3
         fi
     fi
-    echo_maybe Retry getting access token
+    echo_maybe "Retry getting access token"
     access_token=$(az account get-access-token --resource ${az_access_token_api} --query accessToken --output tsv)
     if [ $? != 0 ]; then
         >&2 echo Acquire access token failed
@@ -286,15 +286,15 @@ if [ $? != 0 ]; then
         fi
     fi
 fi
-echo_maybe Access token is $access_token
+echo_maybe "Access token is $access_token"
 
 # Convert to SAML token using endpoint
-echo_maybe Getting SAML token
+echo_maybe "Getting SAML token"
 saml_token=$(curl --silent "https://ws-iam-commontools-oidc2saml.azurewebsites.net/api/TokenExchange/SAMLResponse?IdentifierUri=https://signin.aws.amazon.com/saml/${aws_account}" -H "Authorization: Bearer ${access_token}")
-echo_maybe SAML token is $saml_token
+echo_maybe "SAML token is $saml_token"
 
 # Assume role in AWS
-echo_maybe Assuming role in AWS using role ARN ${aws_role_arn} and principal ${aws_provider}
+echo_maybe "Assuming role in AWS using role ARN ${aws_role_arn} and principal ${aws_provider}"
 aws_token=$(env -u AWS_PROFILE aws sts assume-role-with-saml --duration-seconds ${aws_session_duration} --region ${aws_region} --role-arn "$aws_role_arn" --principal-arn "$aws_provider" --saml-assertion "$saml_token" --query "Credentials" | jq ".Version = 1")
 if [ $? != 0 ]; then
     >&2 echo Acquire AWS token failed
@@ -304,13 +304,13 @@ if [ $? != 0 ]; then
         return 3
     fi
 fi
-echo_maybe aws_token is ${aws_token}
+echo_maybe "aws_token is ${aws_token}"
 
 expiration=$(echo ${aws_token} | jq -r ".Expiration")
-echo_maybe Token expires at ${expiration}
+echo_maybe "Token expires at ${expiration}"
 
 echo ${aws_token} >${credentials_file}
 output_from_credentials "${aws_token}"
 
 expiration=$(echo ${aws_token} | jq -r ".Expiration")
-echo_maybe Credentials expires at $(local_time_for ${expiration})
+echo_maybe "Credentials expires at $(local_time_for ${expiration})"
