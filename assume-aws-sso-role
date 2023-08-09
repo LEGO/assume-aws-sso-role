@@ -140,7 +140,7 @@ Supply account number and role to assume
 
     Example:
 
-    assume_role -a <account number> -r <role>
+    assume-aws-sso-role -a <account number> -r <role>
 
 
 Read role ARN and account number from AWS config
@@ -149,7 +149,7 @@ Read role ARN and account number from AWS config
 
     -p <profile name>: Profile to fetch information from
 
-    assume_role -p <profile name>
+    assume-aws-sso-role -p <profile name>
 
     E.g., if there is a section in the config file with the structure
 
@@ -158,7 +158,7 @@ Read role ARN and account number from AWS config
 
     then we can assume the role just by executing
 
-    assume_role -p my-profile
+    assume-aws-sso-role -p my-profile
 
     If a region is supplied in the profile and a region is not supplied in
     the -e option then it's used in the assume role step."
