@@ -156,7 +156,7 @@ Read role ARN and account number from AWS config
     [profile my-profile]
     role_arn = arn:aws:iam::123456789012:role/SSO-My-Role
 
-    then we can assume the role just but executing
+    then we can assume the role just by executing
 
     assume_role -p my-profile
 
