@@ -6,31 +6,21 @@ To use the script the following steps must be completed:
 2. Install Azure CLI. See instructions in the [Azure documentation](https://learn.microsoft.com/en-us/cli/azure/install-azure-cli).
 3. Install `curl` if necessary.
 4. Install `jq` if necessary.
-5. Install `gh` (GitHub CLI) if you want to install the script on MacOS using Homebrew.
-   See instructions in the [GitHub CLI documentation](https://cli.github.com/manual/installation)
 5. Follow the steps in the [TokenExchange documentation](https://github.com/LEGO/IAM-CommonTools-OIDC2SAML-TokenExchange/tree/main/Examples).
 
 # Installation
 
 ## Generic
 
-Copy the script to a directory that is in your path
+Copy the script to a directory that is in your $PATH
 
 ## Homebrew on MacOS
-
-Ensure that you have SSH keys set up for accessing private LEGO repositories on GitHub.
-
-If you have not already set up a GitHub token then [create
-one](https://github.com/settings/tokens). Make sure you grant it the `read:packages` scope
-and SSO access to the LEGO Group GitHub organization.
 
 Perform the following steps:
 
 ```bash
-gh auth login # Only needed once
-export HOMEBREW_GITHUB_API_TOKEN=$(gh auth token)
-brew tap LEGO/aws-credential-process-azuread git@github.com:LEGO/aws-credential-process-azuread.git
-brew install assume-sso-role
+brew tap LEGO/assume-aws-sso-role git@github.com:LEGO/assume-aws-sso-role.git
+brew install assume-aws-sso-role
 ```
 
 # Usage
@@ -76,7 +66,7 @@ written to `stderr`.
 
 Example:
 ```shell
-assume-sso-role -a <account number> -r <role>
+assume-aws-sso-role -a <account number> -r <role>
 ```
 
 
@@ -87,7 +77,7 @@ In this mode the script looks for a profile with a given name in `$HOME/.aws/con
 `-p <profile name>`: Profile to fetch information from
 
 ```shell
-assume-sso-role -p <profile name>
+assume-aws-sso-role -p <profile name>
 ```
 
 E.g., if there is a section in the config file with the structure
@@ -99,7 +89,7 @@ role_arn = arn:aws:iam::123456789012:role/SSO-My-Role
 
 then we can assume the role by executing
 ```shell
-assume-sso-role -p my-profile
+assume-aws-sso-role -p my-profile
 ```
 
 If a region is supplied in the profile _and_ a region is not supplied in the `-e` option
@@ -114,5 +104,5 @@ account number, role, and region.
 ```ini
 [profile example]
 # Replace "/path/to" with the absolute path to the script on your disk.
- credential_process=/path/to/assume-aws-role -q -a 123456789012 -r SSO-Example -e eu-west-1
+ credential_process=/path/to/assume-aws-aws-role -q -a 123456789012 -r SSO-Example -e eu-west-1
 ```
