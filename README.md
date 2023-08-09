@@ -97,7 +97,7 @@ region = eu-west-1
 role_arn = arn:aws:iam::123456789012:role/SSO-My-Role
 ```
 
-then we can assume the role just but executing
+then we can assume the role by executing
 ```shell
 assume-sso-role -p my-profile
 ```
