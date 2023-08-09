@@ -205,7 +205,6 @@ while getopts "hjqva:d:r:p:e:" option; do
             ;;
         *)
             >&2 echo Unknown option ${option}
-            echo Setting env vars
             if [ ${sourced} = 0 ]; then
                 exit 1
             else
