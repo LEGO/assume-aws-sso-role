@@ -12,7 +12,7 @@ To use the script the following steps must be completed:
 
 ## Generic
 
-Copy the script to a directory that is in your $PATH
+Copy the script to a directory that is in your `$PATH`.
 
 ## Homebrew on MacOS
 
