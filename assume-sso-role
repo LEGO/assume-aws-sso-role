@@ -5,7 +5,7 @@ DEFAULT_REGION=eu-west-1
 platform=$(uname -s)
 credentials_path="${XDG_CACHE_HOME:-"$HOME/.cache"}/aws_az_credentials/"
 quiet=false
-action=set_env_vars
+action=output_json
 (return 0 2>/dev/null) && sourced=1 || sourced=0
 
 az_access_token_api="api://3cd4d944-d89b-401b-b2ae-fb1ece182362"
@@ -119,15 +119,18 @@ line or a profile name referring to a profile in AWS's config file is supplied.
 
 Common options:
 
-    -q: Suppress all non-error output. If not supplied, status and progress
-        messages are written to stderr.
-
-    -j: Output temporary credentials in JSON format.
+    -d: The AWS session duration in seconds. Defaults to 3600 seconds (1 hour).
 
     -e: The region to use. If this is supplied then it overrides any region
         supplied in the AWS config file (see below).
 
-    -d: The AWS session duration in seconds. Defaults to 3600 seconds (1 hour).
+    -j: Output temporary credentials in JSON format.
+
+    -q: Suppress all non-error output. If not supplied, status and progress
+        messages are written to stderr.
+
+    -v: Set environment variables. This requires the script to be sourced to
+        have any effect.
 
 Supply account number and role to assume
 
@@ -153,7 +156,7 @@ Read role ARN and account number from AWS config
     [profile my-profile]
     role_arn = arn:aws:iam::123456789012:role/SSO-My-Role
 
-    then we can assume the role just but executing
+    then we can assume the role just by executing
 
     assume_role -p my-profile
 
@@ -166,7 +169,7 @@ function help()
 }
 
 OPTIND=1
-while getopts "hjqa:d:r:p:e:" option; do
+while getopts "hjqva:d:r:p:e:" option; do
     case "${option}" in
         h)
             help
@@ -176,30 +179,37 @@ while getopts "hjqa:d:r:p:e:" option; do
                 return 0
             fi
             ;;
-        q)
-            quiet=true
-            ;;
-        j)
-            action=output_json
-            ;;
         a)
             aws_account=$OPTARG
-            ;;
-        d)
-            aws_session_duration=$OPTARG
-            ;;
-        r)
-            aws_role=$OPTARG
-            ;;
-        p)
-            aws_profile=$OPTARG
             ;;
         e)
             aws_region=$OPTARG
             ;;
+        d)
+            aws_session_duration=$OPTARG
+            ;;
+        j)
+            action=output_json
+            ;;
+        p)
+            aws_profile=$OPTARG
+            ;;
+        r)
+            aws_role=$OPTARG
+            ;;
+        q)
+            quiet=true
+            ;;
+        v)
+            action=set_env_vars
+            ;;
         *)
             >&2 echo Unknown option ${option}
-            exit 1
+            if [ ${sourced} = 0 ]; then
+                exit 1
+            else
+                return 1
+            fi
             ;;
     esac
 done

@@ -1,33 +1,118 @@
-## Installation
+# Prerequisites
 
-If you are on a mac, you can install the latest version of `aws-credential-process-azuread` using [Homebrew](https://brew.sh/), assuming you have SSH keys set up for accessing private LEGO repositories on GitHub:
+To use the script the following steps must be completed:
+
+1. Install AWS CLI. See instructions in the [AWS documentation](https://docs.aws.amazon.com/cli/latest/userguide/getting-started-install.html).
+2. Install Azure CLI. See instructions in the [Azure documentation](https://learn.microsoft.com/en-us/cli/azure/install-azure-cli).
+3. Install `curl` if necessary.
+4. Install `jq` if necessary.
+5. Install `gh` (GitHub CLI) if you want to install the script on MacOS using Homebrew.
+   See instructions in the [GitHub CLI documentation](https://cli.github.com/manual/installation)
+5. Follow the steps in the [TokenExchange documentation](https://github.com/LEGO/IAM-CommonTools-OIDC2SAML-TokenExchange/tree/main/Examples).
+
+# Installation
+
+## Generic
+
+Copy the script to a directory that is in your path
+
+## Homebrew on MacOS
+
+Ensure that you have SSH keys set up for accessing private LEGO repositories on GitHub.
+
+If you have not already set up a GitHub token then [create
+one](https://github.com/settings/tokens). Make sure you grant it the `read:packages` scope
+and SSO access to the LEGO Group GitHub organization.
+
+Perform the following steps:
 
 ```bash
+gh auth login # Only needed once
 export HOMEBREW_GITHUB_API_TOKEN=$(gh auth token)
 brew tap LEGO/aws-credential-process-azuread git@github.com:LEGO/aws-credential-process-azuread.git
-brew install aws-credential-process-azuread
+brew install assume-sso-role
 ```
 
-If you don't have the `gh` GitHub CLI installed, you can [manually create a token](https://github.com/settings/tokens). Make sure you grant it the `read:packages` scope and SSO access to the LEGO Group GitHub organization.
+# Usage
 
-## Prerequisites
+This script supports two ways of assuming a role on AWS using the token exchange method.
+Each of these are described below.
 
-For the OIDC2SAML token endpoint to be allowed to issue a SAML token you need to approve this on your AWS SSO application in Azure.
+For each of the methods it is possible to select if the script should output the AWS
+temporary credentials as JSON or by setting environment variables. In the latter case, the
+script should be `source`d. It has been tested in Bash and Zsh. The default is to output
+JSON.
 
-You can do this via the following methods if you are the owner of the application in Azure.
+Only one of the two methods can be supplied at one time. If both are attempted the script
+will exit with an error message.
 
-1. Azure portal
-   App Registration → Your application → Expose an API → Add a client application
-   Add the following GUID `3cd4d944-d89b-401b-b2ae-fb1ece182362` to the list, with the scope `user_impersonation`.
+The script caches the temporary AWS credentials and automagically renews them if called
+after expiration.
 
-2. Powershell command [(LEGOIAM-AM Powershell module)](https://github.com/LEGO/IAM-CommonTools-OIDC2SAML-TokenExchange/tree/85e6ec42e8ff1d2d07d229a9878a830f52729ee2/Examples)
-   Remember to check `main` for updates
+The JSON output is in a format suited for use in the `credential_process` setting in AWS
+config profiles.
 
-## Example
+## Common options
 
-Example AWS config
+`-h`: Print help text.
+
+`-d`: The AWS session duration in seconds. The default is 3600 (1 hour).
+
+`-e`: The region to use. If this is supplied then it overrides any region supplied in the
+AWS config file (see below).
+
+`-j`: Output temporary credentials in JSON format. This is the default action.
+
+`-q`: Suppress all non-error output. If not supplied, status and progress messages are
+written to `stderr`.
+
+`-v`: Set environment variables
+
+## Get credentials by supplying account number and role to assume
+
+`-a`: Account number
+
+`-r`: Role to assume
+
+Example:
+```shell
+assume-sso-role -a <account number> -r <role>
+```
+
+
+## Get credentials by reading role ARN and account number from an AWS config profile
+
+In this mode the script looks for a profile with a given name in `$HOME/.aws/config`.
+
+`-p <profile name>`: Profile to fetch information from
+
+```shell
+assume-sso-role -p <profile name>
+```
+
+E.g., if there is a section in the config file with the structure
+```
+[profile my-profile]
+region = eu-west-1
+role_arn = arn:aws:iam::123456789012:role/SSO-My-Role
+```
+
+then we can assume the role by executing
+```shell
+assume-sso-role -p my-profile
+```
+
+If a region is supplied in the profile _and_ a region is not supplied in the `-e` option
+then it's used in the assume role step.
+
+
+## Use as external process in AWS config profiles
+
+Add a profile using the `credential_process` setting and use the options for supplying
+account number, role, and region.
 
 ```ini
 [profile example]
- credential_process=aws-credential-process-azuread "123456789012" "SSO-Example"
+# Replace "/path/to" with the absolute path to the script on your disk.
+ credential_process=/path/to/assume-aws-role -q -a 123456789012 -r SSO-Example -e eu-west-1
 ```
