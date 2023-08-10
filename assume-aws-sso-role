@@ -25,92 +25,91 @@ aws_session_duration=3600
 mkdir -p ${credentials_path}
 
 echo_maybe() {
-    if [ "${quiet}" = false ]; then
-        >&2 echo $*
-    fi
+  if [ "${quiet}" = false ]; then
+    echo >&2 $*
+  fi
 }
 
 iso_8601_to_rfc_822_date() {
-    echo "$1" | sed -E 's/\+([[:digit:]][[:digit:]]):([[:digit:]][[:digit:]])/+\1\2/'
+  echo "$1" | sed -E 's/\+([[:digit:]][[:digit:]]):([[:digit:]][[:digit:]])/+\1\2/'
 }
 
 date_to_seconds() {
-    if [ ${platform} = Darwin ]; then
-        date -j -f "%FT%T%z" $(iso_8601_to_rfc_822_date $1) "+%s"
-    else
-        date -d "$1" "+%s" 2>/dev/null || gdate -d "$expiration" "+%s"
-    fi
+  if [ ${platform} = Darwin ]; then
+    date -j -f "%FT%T%z" $(iso_8601_to_rfc_822_date $1) "+%s"
+  else
+    date -d "$1" "+%s" 2>/dev/null || gdate -d "$expiration" "+%s"
+  fi
 }
 
 local_time_for() {
-    time_and_date_in_seconds=$(date_to_seconds $1)
-    if [ ${platform} = Darwin ]; then
-        date -j -f "%FT%T%z" $(iso_8601_to_rfc_822_date $1)
-    else
-        date -d "$1"
-    fi
+  time_and_date_in_seconds=$(date_to_seconds $1)
+  if [ ${platform} = Darwin ]; then
+    date -j -f "%FT%T%z" $(iso_8601_to_rfc_822_date $1)
+  else
+    date -d "$1"
+  fi
 }
 
 output_from_credentials() {
-    if [ ${action} = set_env_vars ]; then
-        echo_maybe "Setting environment variables"
-        export AWS_ACCESS_KEY_ID=$(echo $1 | jq -r '.AccessKeyId')
-        export AWS_SECRET_ACCESS_KEY=$(echo $1 | jq -r '.SecretAccessKey')
-        export AWS_SESSION_TOKEN=$(echo $1 | jq -r '.SessionToken')
-        export AWS_DEFAULT_REGION=${DEFAULT_REGION}
-        export AWS_REGION=${aws_region}
-    else
-        echo $1
-    fi
+  if [ ${action} = set_env_vars ]; then
+    echo_maybe "Setting environment variables"
+    export AWS_ACCESS_KEY_ID=$(echo $1 | jq -r '.AccessKeyId')
+    export AWS_SECRET_ACCESS_KEY=$(echo $1 | jq -r '.SecretAccessKey')
+    export AWS_SESSION_TOKEN=$(echo $1 | jq -r '.SessionToken')
+    export AWS_DEFAULT_REGION=${DEFAULT_REGION}
+    export AWS_REGION=${aws_region}
+  else
+    echo $1
+  fi
 }
 
 account_number_from_role_arn() {
-    echo "$1" | cut -d ':' -f 5
+  echo "$1" | cut -d ':' -f 5
 }
 
 role_name_from_role_arn() {
-    echo "$1" | cut -d ':' -f 6 | cut -d '/' -f 2
+  echo "$1" | cut -d ':' -f 6 | cut -d '/' -f 2
 }
 
 set_role_arn_from_account_and_role() {
-    aws_role_arn="arn:aws:iam::${aws_account}:role/${aws_role}"
+  aws_role_arn="arn:aws:iam::${aws_account}:role/${aws_role}"
 }
 
 set_account_and_role_from_role_arn() {
-    aws_account=$(account_number_from_role_arn ${aws_role_arn})
-    aws_role=$(role_name_from_role_arn ${aws_role_arn})
+  aws_account=$(account_number_from_role_arn ${aws_role_arn})
+  aws_role=$(role_name_from_role_arn ${aws_role_arn})
 }
 
 role_info_from_profile() {
-    if [ -z "${aws_region}" ]; then
-        aws_region=$(aws configure get region --profile ${aws_profile})
-    fi
-    if [ -z "${aws_region}" ]; then
-        echo_maybe "Region not found in profile ${aws_profile}."
-    fi
+  if [ -z "${aws_region}" ]; then
+    aws_region=$(aws configure get region --profile ${aws_profile})
+  fi
+  if [ -z "${aws_region}" ]; then
+    echo_maybe "Region not found in profile ${aws_profile}."
+  fi
 
-    aws_role_arn=$(aws configure get role_arn --profile ${aws_profile})
-    result=$?
-    if [ ${result} -ne 0 ]; then
-        return 1
-    fi
-    set_account_and_role_from_role_arn
+  aws_role_arn=$(aws configure get role_arn --profile ${aws_profile})
+  result=$?
+  if [ ${result} -ne 0 ]; then
+    return 1
+  fi
+  set_account_and_role_from_role_arn
 }
 
 load_credentials_from_file() {
-    credentials=$(cat ${credentials_file})
-    expiration=$(echo ${credentials} | jq -r ".Expiration")
-    expiration_in_seconds=$(date_to_seconds ${expiration})
-    now_in_seconds=$(date "+%s")
-    if [ ${expiration_in_seconds} -gt ${now_in_seconds} ]; then
-        output_from_credentials "${credentials}"
-        echo_maybe "Credentials expires at $(local_time_for ${expiration})"
-        return 0
-    else
-        return 1
-    fi
+  credentials=$(cat ${credentials_file})
+  expiration=$(echo ${credentials} | jq -r ".Expiration")
+  expiration_in_seconds=$(date_to_seconds ${expiration})
+  now_in_seconds=$(date "+%s")
+  if [ ${expiration_in_seconds} -gt ${now_in_seconds} ]; then
+    output_from_credentials "${credentials}"
+    echo_maybe "Credentials expires at $(local_time_for ${expiration})"
+    return 0
+  else
+    return 1
+  fi
 }
-
 
 __usage="Assume a role on an AWS account using the token exchange method. The
 region, account number, and role can be supplied in two different and mutually
@@ -163,106 +162,105 @@ Read role ARN and account number from AWS config
     If a region is supplied in the profile and a region is not supplied in
     the -e option then it's used in the assume role step."
 
-function help()
-{
-    echo "$__usage"
+function help() {
+  echo "$__usage"
 }
 
 OPTIND=1
 while getopts "hjqva:d:r:p:e:" option; do
-    case "${option}" in
-        h)
-            help
-            if [ ${sourced} = 0 ]; then
-                exit 0
-            else
-                return 0
-            fi
-            ;;
-        a)
-            aws_account=$OPTARG
-            ;;
-        e)
-            aws_region=$OPTARG
-            ;;
-        d)
-            aws_session_duration=$OPTARG
-            ;;
-        j)
-            action=output_json
-            ;;
-        p)
-            aws_profile=$OPTARG
-            ;;
-        r)
-            aws_role=$OPTARG
-            ;;
-        q)
-            quiet=true
-            ;;
-        v)
-            action=set_env_vars
-            ;;
-        *)
-            >&2 echo Unknown option ${option}
-            if [ ${sourced} = 0 ]; then
-                exit 1
-            else
-                return 1
-            fi
-            ;;
-    esac
+  case "${option}" in
+    h)
+      help
+      if [ ${sourced} = 0 ]; then
+        exit 0
+      else
+        return 0
+      fi
+      ;;
+    a)
+      aws_account=$OPTARG
+      ;;
+    e)
+      aws_region=$OPTARG
+      ;;
+    d)
+      aws_session_duration=$OPTARG
+      ;;
+    j)
+      action=output_json
+      ;;
+    p)
+      aws_profile=$OPTARG
+      ;;
+    r)
+      aws_role=$OPTARG
+      ;;
+    q)
+      quiet=true
+      ;;
+    v)
+      action=set_env_vars
+      ;;
+    *)
+      echo >&2 Unknown option ${option}
+      if [ ${sourced} = 0 ]; then
+        exit 1
+      else
+        return 1
+      fi
+      ;;
+  esac
 done
-shift "$((OPTIND-1))"
+shift "$((OPTIND - 1))"
 
 if [ ! -z "${aws_profile}" ] && [[ ! -z "${aws_account}" || ! -z "${aws_role}" ]]; then
-    >&2 echo Profile and account/role options are not allowed at the same time
-    if [ ${sourced} = 0 ]; then
-        exit 2
-    else
-        return 2
-    fi
+  echo >&2 Profile and account/role options are not allowed at the same time
+  if [ ${sourced} = 0 ]; then
+    exit 2
+  else
+    return 2
+  fi
 fi
 
 if [[ -z "${aws_profile}" && -z "${aws_account}" && -z "${aws_role}" ]]; then
-    >&2 echo Either -p or -a and -r must be provided
-    if [ ${sourced} = 0 ]; then
-        exit 4
-    else
-        return 4
-    fi
+  echo >&2 Either -p or -a and -r must be provided
+  if [ ${sourced} = 0 ]; then
+    exit 4
+  else
+    return 4
+  fi
 fi
 
 if [ ! -z "${aws_profile}" ]; then
-    role_info_from_profile
-    if [ $? -ne 0 ]; then
-        >&2 echo Role ARN for profile ${aws_profile} not found.
-        if [ ${sourced} = 0 ]; then
-            exit 3
-        else
-            return 3
-        fi
+  role_info_from_profile
+  if [ $? -ne 0 ]; then
+    echo >&2 Role ARN for profile ${aws_profile} not found.
+    if [ ${sourced} = 0 ]; then
+      exit 3
+    else
+      return 3
     fi
+  fi
 else
-    set_role_arn_from_account_and_role
+  set_role_arn_from_account_and_role
 fi
 
 credentials_file=$credentials_path/$aws_account-$aws_role.creds
 if [ -f "${credentials_file}" ]; then
-    echo_maybe "Loading credentials from file"
-    load_credentials_from_file
-    if [ $? = 0 ]; then
-        if [ ${sourced} = 0 ]; then
-            exit 0
-        else
-            return 0
-        fi
+  echo_maybe "Loading credentials from file"
+  load_credentials_from_file
+  if [ $? = 0 ]; then
+    if [ ${sourced} = 0 ]; then
+      exit 0
+    else
+      return 0
     fi
+  fi
 fi
 
 if [ -z "${aws_region}" ]; then
-    echo_maybe "Region not supplied. Using ${DEFAULT_REGION}."
-    aws_region=${DEFAULT_REGION}
+  echo_maybe "Region not supplied. Using ${DEFAULT_REGION}."
+  aws_region=${DEFAULT_REGION}
 fi
 
 echo_maybe "Region is ${aws_region}"
@@ -275,26 +273,26 @@ aws_provider="arn:aws:iam::${aws_account}:saml-provider/AzureAD"
 echo_maybe "Getting access token"
 access_token=$(az account get-access-token --resource ${az_access_token_api} --query accessToken --output tsv)
 if [ $? != 0 ]; then
-    echo_maybe "Fetching access token failed. Attempting new log in."
-    az login --output none --tenant ${tenant} 2>/dev/null
-    if [ $? != 0 ]; then
-        >&2 echo Login failed
-        if [ ${sourced} = 0 ]; then
-            exit 3
-        else
-            return 3
-        fi
+  echo_maybe "Fetching access token failed. Attempting new log in."
+  az login --output none --tenant ${tenant} 2>/dev/null
+  if [ $? != 0 ]; then
+    echo >&2 Login failed
+    if [ ${sourced} = 0 ]; then
+      exit 3
+    else
+      return 3
     fi
-    echo_maybe "Retry getting access token"
-    access_token=$(az account get-access-token --resource ${az_access_token_api} --query accessToken --output tsv)
-    if [ $? != 0 ]; then
-        >&2 echo Acquire access token failed
-        if [ ${sourced} = 0 ]; then
-            exit 3
-        else
-            return 3
-        fi
+  fi
+  echo_maybe "Retry getting access token"
+  access_token=$(az account get-access-token --resource ${az_access_token_api} --query accessToken --output tsv)
+  if [ $? != 0 ]; then
+    echo >&2 Acquire access token failed
+    if [ ${sourced} = 0 ]; then
+      exit 3
+    else
+      return 3
     fi
+  fi
 fi
 echo_maybe "Access token is $access_token"
 
@@ -307,12 +305,12 @@ echo_maybe "SAML token is $saml_token"
 echo_maybe "Assuming role in AWS using role ARN ${aws_role_arn} and principal ${aws_provider}"
 aws_token=$(env -u AWS_PROFILE aws sts assume-role-with-saml --duration-seconds ${aws_session_duration} --region ${aws_region} --role-arn "$aws_role_arn" --principal-arn "$aws_provider" --saml-assertion "$saml_token" --query "Credentials" | jq ".Version = 1")
 if [ $? != 0 ]; then
-    >&2 echo Acquire AWS token failed
-    if [ ${sourced} = 0 ]; then
-        exit 3
-    else
-        return 3
-    fi
+  echo >&2 Acquire AWS token failed
+  if [ ${sourced} = 0 ]; then
+    exit 3
+  else
+    return 3
+  fi
 fi
 echo_maybe "aws_token is ${aws_token}"
 
