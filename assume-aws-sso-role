@@ -148,6 +148,10 @@ line or a profile name referring to a profile in AWS's config file is supplied.
 
 Common options:
 
+    -h: Print this help and exit.
+
+    -b: Open AWS console in default browser
+
     -d: The AWS session duration in seconds. Defaults to 3600 seconds (1 hour).
 
     -e: The region to use. If this is supplied then it overrides any region
