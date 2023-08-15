@@ -10,6 +10,7 @@ action=output_json
 
 az_access_token_api="api://3cd4d944-d89b-401b-b2ae-fb1ece182362"
 tenant=1d063515-6cad-4195-9486-ea65df456faa
+aws_federation_signin_url="https://signin.aws.amazon.com/federation"
 
 aws_profile=
 aws_provider=
@@ -51,17 +52,31 @@ local_time_for() {
   fi
 }
 
-output_from_credentials() {
-  if [ ${action} = set_env_vars ]; then
-    echo_maybe "Setting environment variables"
-    export AWS_ACCESS_KEY_ID=$(echo $1 | jq -r '.AccessKeyId')
-    export AWS_SECRET_ACCESS_KEY=$(echo $1 | jq -r '.SecretAccessKey')
-    export AWS_SESSION_TOKEN=$(echo $1 | jq -r '.SessionToken')
-    export AWS_DEFAULT_REGION=${DEFAULT_REGION}
-    export AWS_REGION=${aws_region}
-  else
-    echo $1
-  fi
+perform_action_for_credentials() {
+  case ${action} in
+    open_in_browser)
+      open_in_browser "$1"
+      if [ $? != 0 ]; then
+        echo >&2 "Open in browser failed."
+        return 1
+      fi
+      ;;
+    set_env_vars)
+      echo_maybe "Setting environment variables"
+      export AWS_ACCESS_KEY_ID=$(echo $1 | jq -r '.AccessKeyId')
+      export AWS_SECRET_ACCESS_KEY=$(echo $1 | jq -r '.SecretAccessKey')
+      export AWS_SESSION_TOKEN=$(echo $1 | jq -r '.SessionToken')
+      export AWS_DEFAULT_REGION=${DEFAULT_REGION}
+      export AWS_REGION=${aws_region}
+      ;;
+    output_json)
+      echo $1
+      ;;
+    *)
+      echo >&2 Unknown action ${action}
+      return 1
+      ;;
+  esac
 }
 
 account_number_from_role_arn() {
@@ -97,13 +112,28 @@ role_info_from_profile() {
   set_account_and_role_from_role_arn
 }
 
+open_in_browser() {
+    local get_signin_token_params=$(echo $1 | jq '. + {"sessionId": .AccessKeyId, "sessionKey": .SecretAccessKey, "sessionToken": .SessionToken} | del(.AccessKeyId) | del(.SecretAccessKey) | del(.SessionToken) | del(.Version) | del(.Expiration)')
+    local signin_token=$(curl --silent --get --data-urlencode "Action=getSigninToken" --data-urlencode "Session=${get_signin_token_params}" ${aws_federation_signin_url} | jq -r .SigninToken)
+    if [ ${platform} = Darwin ]; then
+      open "${aws_federation_signin_url}?Action=login&Issuer=&Destination=https%3A%2F%2Fconsole.aws.amazon.com%2F&SigninToken=${signin_token}"
+    else
+      echo >&2 "Unsupported platform"
+      return 1
+    fi
+}
+
 load_credentials_from_file() {
   credentials=$(cat ${credentials_file})
   expiration=$(echo ${credentials} | jq -r ".Expiration")
   expiration_in_seconds=$(date_to_seconds ${expiration})
   now_in_seconds=$(date "+%s")
   if [ ${expiration_in_seconds} -gt ${now_in_seconds} ]; then
-    output_from_credentials "${credentials}"
+    perform_action_for_credentials "${credentials}"
+    if [ $? != 0 ]; then
+      echo >&2 "Performing action ${action} failed."
+      return 1
+    fi
     echo_maybe "Credentials expires at $(local_time_for ${expiration})"
     return 0
   else
@@ -167,7 +197,7 @@ function help() {
 }
 
 OPTIND=1
-while getopts "hjqva:d:r:p:e:" option; do
+while getopts "hbjqva:d:r:p:e:" option; do
   case "${option}" in
     h)
       help
@@ -179,6 +209,9 @@ while getopts "hjqva:d:r:p:e:" option; do
       ;;
     a)
       aws_account=$OPTARG
+      ;;
+    b)
+      action=open_in_browser
       ;;
     e)
       aws_region=$OPTARG
@@ -234,7 +267,7 @@ fi
 if [ ! -z "${aws_profile}" ]; then
   role_info_from_profile
   if [ $? -ne 0 ]; then
-    echo >&2 Role ARN for profile ${aws_profile} not found.
+    echo >&2 "Role ARN for profile ${aws_profile} not found."
     if [ ${sourced} = 0 ]; then
       exit 3
     else
@@ -305,7 +338,7 @@ echo_maybe "SAML token is $saml_token"
 echo_maybe "Assuming role in AWS using role ARN ${aws_role_arn} and principal ${aws_provider}"
 aws_token=$(env -u AWS_PROFILE aws sts assume-role-with-saml --duration-seconds ${aws_session_duration} --region ${aws_region} --role-arn "$aws_role_arn" --principal-arn "$aws_provider" --saml-assertion "$saml_token" --query "Credentials" | jq ".Version = 1")
 if [ $? != 0 ]; then
-  echo >&2 Acquire AWS token failed
+  echo >&2 "Acquire AWS token failed"
   if [ ${sourced} = 0 ]; then
     exit 3
   else
@@ -317,8 +350,8 @@ echo_maybe "aws_token is ${aws_token}"
 expiration=$(echo ${aws_token} | jq -r ".Expiration")
 echo_maybe "Token expires at ${expiration}"
 
-echo ${aws_token} >${credentials_file}
-output_from_credentials "${aws_token}"
+echo "${aws_token}" >${credentials_file}
 
+perform_action_for_credentials "${aws_token}"
 expiration=$(echo ${aws_token} | jq -r ".Expiration")
 echo_maybe "Credentials expires at $(local_time_for ${expiration})"
