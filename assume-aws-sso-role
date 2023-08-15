@@ -10,7 +10,9 @@ action=output_json
 
 az_access_token_api="api://3cd4d944-d89b-401b-b2ae-fb1ece182362"
 tenant=1d063515-6cad-4195-9486-ea65df456faa
-aws_federation_signin_url="https://signin.aws.amazon.com/federation"
+aws_federation_signin_url="https://us-east-1.signin.aws.amazon.com/federation"
+federation_destination_url="https://console.aws.amazon.com"
+logout_url="https://us-east-1.signin.aws.amazon.com/oauth?Action=logout"
 
 aws_profile=
 aws_provider=
@@ -112,11 +114,26 @@ role_info_from_profile() {
   set_account_and_role_from_role_arn
 }
 
+url_encode() {
+  echo "$1" | jq "@uri" -jR
+}
+
+signin_token_for() {
+  local get_signin_token_params=$(echo $1 | jq '. + {"sessionId": .AccessKeyId, "sessionKey": .SecretAccessKey, "sessionToken": .SessionToken} | del(.AccessKeyId) | del(.SecretAccessKey) | del(.SessionToken) | del(.Version) | del(.Expiration)')
+  curl --silent --get --data-urlencode "Action=getSigninToken" --data-urlencode "Session=${get_signin_token_params}" ${aws_federation_signin_url} | jq -r .SigninToken
+}
+
+browser_url() {
+  local signin_token=$(signin_token_for "$1")
+  local federation_destination_url_encoded=$(url_encode ${federation_destination_url})
+  local federation_url="${aws_federation_signin_url}?Action=login&Issuer=&SigninToken=${signin_token}&Destination=${federation_destination_url_encoded}"
+  local federation_url_encoded=$(url_encode ${federation_url})
+  echo "${logout_url}&redirect_uri=${federation_url_encoded}"
+}
+
 open_in_browser() {
-    local get_signin_token_params=$(echo $1 | jq '. + {"sessionId": .AccessKeyId, "sessionKey": .SecretAccessKey, "sessionToken": .SessionToken} | del(.AccessKeyId) | del(.SecretAccessKey) | del(.SessionToken) | del(.Version) | del(.Expiration)')
-    local signin_token=$(curl --silent --get --data-urlencode "Action=getSigninToken" --data-urlencode "Session=${get_signin_token_params}" ${aws_federation_signin_url} | jq -r .SigninToken)
     if [ ${platform} = Darwin ]; then
-      open "${aws_federation_signin_url}?Action=login&Issuer=&Destination=https%3A%2F%2Fconsole.aws.amazon.com%2F&SigninToken=${signin_token}"
+      open $(browser_url "$1")
     else
       echo >&2 "Unsupported platform"
       return 1
