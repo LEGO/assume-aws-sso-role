@@ -46,6 +46,8 @@ config profiles.
 
 `-h`: Print help text.
 
+`-b`: Open AWS console for the account after succesful retrieval of credentials.
+
 `-d`: The AWS session duration in seconds. The default is 3600 (1 hour).
 
 `-e`: The region to use. If this is supplied then it overrides any region supplied in the
