@@ -7,6 +7,11 @@ credentials_path="${XDG_CACHE_HOME:-"$HOME/.cache"}/aws_az_credentials/"
 quiet=false
 action=output_json
 (return 0 2>/dev/null) && sourced=1 || sourced=0
+if [ ${sourced} -eq 0 ]; then
+  exit_cmd=exit
+else
+  exit_cmd=return
+fi
 
 az_access_token_api="api://3cd4d944-d89b-401b-b2ae-fb1ece182362"
 tenant=1d063515-6cad-4195-9486-ea65df456faa
@@ -222,11 +227,7 @@ while getopts "hbjqva:d:r:p:e:" option; do
   case "${option}" in
     h)
       help
-      if [ ${sourced} = 0 ]; then
-        exit 0
-      else
-        return 0
-      fi
+      ${exit_cmd} 0
       ;;
     a)
       aws_account=$OPTARG
@@ -257,11 +258,7 @@ while getopts "hbjqva:d:r:p:e:" option; do
       ;;
     *)
       echo >&2 Unknown option ${option}
-      if [ ${sourced} = 0 ]; then
-        exit 1
-      else
-        return 1
-      fi
+      ${exit_cmd} 1
       ;;
   esac
 done
@@ -269,31 +266,19 @@ shift "$((OPTIND - 1))"
 
 if [ ! -z "${aws_profile}" ] && [[ ! -z "${aws_account}" || ! -z "${aws_role}" ]]; then
   echo >&2 Profile and account/role options are not allowed at the same time
-  if [ ${sourced} = 0 ]; then
-    exit 2
-  else
-    return 2
-  fi
+  ${exit_cmd} 2
 fi
 
 if [[ -z "${aws_profile}" && -z "${aws_account}" && -z "${aws_role}" ]]; then
   echo >&2 Either -p or -a and -r must be provided
-  if [ ${sourced} = 0 ]; then
-    exit 4
-  else
-    return 4
-  fi
+  ${exit_cmd} 4
 fi
 
 if [ ! -z "${aws_profile}" ]; then
   role_info_from_profile
   if [ $? -ne 0 ]; then
     echo >&2 "Role ARN for profile ${aws_profile} not found."
-    if [ ${sourced} = 0 ]; then
-      exit 3
-    else
-      return 3
-    fi
+    ${exit_cmd} 3
   fi
 else
   set_role_arn_from_account_and_role
@@ -304,11 +289,7 @@ if [ -f "${credentials_file}" ]; then
   echo_maybe "Loading credentials from file"
   load_credentials_from_file
   if [ $? = 0 ]; then
-    if [ ${sourced} = 0 ]; then
-      exit 0
-    else
-      return 0
-    fi
+    ${exit_cmd} 0
   fi
 fi
 
@@ -331,21 +312,13 @@ if [ $? != 0 ]; then
   az login --output none --tenant ${tenant} 2>/dev/null
   if [ $? != 0 ]; then
     echo >&2 Login failed
-    if [ ${sourced} = 0 ]; then
-      exit 3
-    else
-      return 3
-    fi
+    ${exit_cmd} 3
   fi
   echo_maybe "Retry getting access token"
   access_token=$(az account get-access-token --resource ${az_access_token_api} --query accessToken --output tsv)
   if [ $? != 0 ]; then
     echo >&2 Acquire access token failed
-    if [ ${sourced} = 0 ]; then
-      exit 3
-    else
-      return 3
-    fi
+    ${exit_cmd} 3
   fi
 fi
 echo_maybe "Access token is $access_token"
@@ -360,11 +333,7 @@ echo_maybe "Assuming role in AWS using role ARN ${aws_role_arn} and principal ${
 aws_token=$(env -u AWS_PROFILE aws sts assume-role-with-saml --duration-seconds ${aws_session_duration} --region ${aws_region} --role-arn "$aws_role_arn" --principal-arn "$aws_provider" --saml-assertion "$saml_token" --query "Credentials" | jq ".Version = 1")
 if [ $? != 0 ]; then
   echo >&2 "Acquire AWS token failed"
-  if [ ${sourced} = 0 ]; then
-    exit 3
-  else
-    return 3
-  fi
+  ${exit_cmd} 3
 fi
 echo_maybe "aws_token is ${aws_token}"
 
