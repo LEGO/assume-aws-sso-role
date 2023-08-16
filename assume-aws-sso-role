@@ -16,7 +16,7 @@ fi
 az_access_token_api="api://3cd4d944-d89b-401b-b2ae-fb1ece182362"
 tenant=1d063515-6cad-4195-9486-ea65df456faa
 aws_federation_signin_url="https://us-east-1.signin.aws.amazon.com/federation"
-federation_destination_url="https://console.aws.amazon.com"
+federation_destination_url="https://REGION.console.aws.amazon.com"
 logout_url="https://us-east-1.signin.aws.amazon.com/oauth?Action=logout"
 
 aws_profile=
@@ -130,7 +130,7 @@ signin_token_for() {
 
 browser_url() {
   local signin_token=$(signin_token_for "$1")
-  local federation_destination_url_encoded=$(url_encode ${federation_destination_url})
+  local federation_destination_url_encoded=$(url_encode ${federation_destination_url//REGION/${aws_region}})
   local federation_url="${aws_federation_signin_url}?Action=login&Issuer=&SigninToken=${signin_token}&Destination=${federation_destination_url_encoded}"
   local federation_url_encoded=$(url_encode ${federation_url})
   echo "${logout_url}&redirect_uri=${federation_url_encoded}"
