@@ -67,11 +67,11 @@ perform_action_for_credentials() {
       fi
       ;;
     set_env_vars)
-      echo export AWS_ACCESS_KEY_ID="'$(echo "$1" | jq -r ".AccessKeyId")'"
-      echo export AWS_SECRET_ACCESS_KEY="$(echo "$1" | jq -r ".SecretAccessKey")"
-      echo export AWS_SESSION_TOKEN="$(echo "$1" | jq -r ".SessionToken")"
-      echo export AWS_DEFAULT_REGION="${DEFAULT_REGION}"
-      echo export AWS_REGION="${aws_region}"
+      echo "export AWS_ACCESS_KEY_ID=$(echo "$1" | jq -r ".AccessKeyId")"
+      echo "export AWS_SECRET_ACCESS_KEY=$(echo "$1" | jq -r ".SecretAccessKey")"
+      echo "export AWS_SESSION_TOKEN=$(echo "$1" | jq -r ".SessionToken")"
+      echo "export AWS_DEFAULT_REGION=${DEFAULT_REGION}"
+      echo "export AWS_REGION=${aws_region}"
       ;;
     output_json)
       echo "$1"
