@@ -58,7 +58,12 @@ AWS config file (see below).
 `-q`: Suppress all non-error output. If not supplied, status and progress messages are
 written to `stderr`.
 
-`-v`: Set environment variables
+`-v`: Print export statements to set environment variables. Use eval to set the variables.
+
+Example:
+```shell
+eval $(assume-aws-sso-role -a <account number> -r <role> -v)
+```
 
 ## Get credentials by supplying account number and role to assume
 
