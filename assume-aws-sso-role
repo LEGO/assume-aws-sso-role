@@ -67,22 +67,11 @@ perform_action_for_credentials() {
       fi
       ;;
     set_env_vars)
-      echo_maybe "Setting environment variables"
-      if AWS_ACCESS_KEY_ID=$(echo "$1" | jq -r '.AccessKeyId'); then
-        export AWS_ACCESS_KEY_ID
-      fi
-      if AWS_SECRET_ACCESS_KEY=$(echo "$1" | jq -r '.SecretAccessKey'); then
-        export AWS_SECRET_ACCESS_KEY
-      fi
-      if AWS_SESSION_TOKEN=$(echo "$1" | jq -r '.SessionToken'); then
-        export AWS_SESSION_TOKEN
-      fi
-      if AWS_DEFAULT_REGION=${DEFAULT_REGION}; then
-        export AWS_DEFAULT_REGION
-      fi
-      if AWS_REGION=${aws_region}; then
-        export AWS_REGION
-      fi
+      echo "export AWS_ACCESS_KEY_ID=$(echo "$1" | jq -r ".AccessKeyId")"
+      echo "export AWS_SECRET_ACCESS_KEY=$(echo "$1" | jq -r ".SecretAccessKey")"
+      echo "export AWS_SESSION_TOKEN=$(echo "$1" | jq -r ".SessionToken")"
+      echo "export AWS_DEFAULT_REGION=${DEFAULT_REGION}"
+      echo "export AWS_REGION=${aws_region}"
       ;;
     output_json)
       echo "$1"
@@ -196,8 +185,12 @@ Common options:
     -q: Suppress all non-error output. If not supplied, status and progress
         messages are written to stderr.
 
-    -v: Set environment variables. This requires the script to be sourced to
-        have any effect.
+    -v: Print export statements to set environment variables. Use eval to set
+        the variables.
+
+        Example:
+
+        eval \$(assume-aws-sso-role -a <account number> -r <role> -v)
 
 Supply account number and role to assume
 
