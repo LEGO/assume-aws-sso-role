@@ -48,10 +48,14 @@ config profiles.
 
 `-b`: Open AWS console for the account after succesful retrieval of credentials.
 
+`-c`: Clear cache. Deletes all files in ${credentials_path}
+
 `-d`: The AWS session duration in seconds. The default is 3600 (1 hour).
 
 `-e`: The region to use. If this is supplied then it overrides any region supplied in the
 AWS config file (see below).
+
+`-f`: Force fetching new credentials regardless of non-expired cached credentials.
 
 `-j`: Output temporary credentials in JSON format. This is the default action.
 

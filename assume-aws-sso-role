@@ -18,6 +18,8 @@ tenant=1d063515-6cad-4195-9486-ea65df456faa
 aws_federation_signin_url="https://us-east-1.signin.aws.amazon.com/federation"
 federation_destination_url="https://REGION.console.aws.amazon.com"
 logout_url="https://us-east-1.signin.aws.amazon.com/oauth?Action=logout"
+force_renew=false
+clear_cache_requested=false
 
 aws_profile=
 aws_provider=
@@ -164,6 +166,11 @@ load_credentials_from_file() {
   fi
 }
 
+clear_cache() {
+  echo_maybe "Deleting all cached tokens in ${credentials_path}"
+  rm -f "${credentials_path}"/*
+}
+
 __usage="Assume a role on an AWS account using the token exchange method. The
 region, account number, and role can be supplied in two different and mutually
 exclusive ways: Either an account number and role is supplied on the command
@@ -175,10 +182,14 @@ Common options:
 
     -b: Open AWS console in default browser
 
+    -c: Clear cache. Deletes all files in ${credentials_path}
+
     -d: The AWS session duration in seconds. Defaults to 3600 seconds (1 hour).
 
     -e: The region to use. If this is supplied then it overrides any region
         supplied in the AWS config file (see below).
+
+    -f: Force fetching new credentials regardless of non-expired cached credentials.
 
     -j: Output temporary credentials in JSON format.
 
@@ -228,32 +239,38 @@ function help() {
 }
 
 OPTIND=1
-while getopts "hbjqva:d:r:p:e:" option; do
+while getopts "hbcfjqva:d:e:p:r:" option; do
   case "${option}" in
     h)
       help
       ${exit_cmd} 0
       ;;
     a)
-      aws_account=$OPTARG
+      aws_account=${OPTARG}
       ;;
     b)
       action=open_in_browser
       ;;
-    e)
-      aws_region=$OPTARG
+    c)
+      clear_cache_requested=true
       ;;
     d)
-      aws_session_duration=$OPTARG
+      aws_session_duration=${OPTARG}
+      ;;
+    e)
+      aws_region=${OPTARG}
+      ;;
+    f)
+      force_renew=true
       ;;
     j)
       action=output_json
       ;;
     p)
-      aws_profile=$OPTARG
+      aws_profile=${OPTARG}
       ;;
     r)
-      aws_role=$OPTARG
+      aws_role=${OPTARG}
       ;;
     q)
       quiet=true
@@ -268,6 +285,11 @@ while getopts "hbjqva:d:r:p:e:" option; do
   esac
 done
 shift "$((OPTIND - 1))"
+
+if [ ${clear_cache_requested} = true ]; then
+  clear_cache
+  ${exit_cmd} $?
+fi
 
 if [ -n "${aws_profile}" ] && [[ -n "${aws_account}" || -n "${aws_role}" ]]; then
   echo >&2 Profile and account/role options are not allowed at the same time
@@ -288,8 +310,8 @@ else
   set_role_arn_from_account_and_role
 fi
 
-credentials_file=$credentials_path/$aws_account-$aws_role.creds
-if [ -f "${credentials_file}" ]; then
+credentials_file=${credentials_path}/${aws_account}-${aws_role}.creds
+if [[ ${force_renew} = false && -f "${credentials_file}" ]]; then
   echo_maybe "Loading credentials from file"
   if load_credentials_from_file; then
     ${exit_cmd} 0
