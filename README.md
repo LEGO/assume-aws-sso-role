@@ -29,9 +29,9 @@ This script supports two ways of assuming a role on AWS using the token exchange
 Each of these are described below.
 
 For each of the methods it is possible to select if the script should output the AWS
-temporary credentials as JSON or by setting environment variables. In the latter case, the
-script should be `source`d. It has been tested in Bash and Zsh. The default is to output
-JSON.
+temporary credentials as JSON or as a set of `export` statements for setting environment
+variables. In the latter case, the output can be used as input for `eval` for actually
+setting the variables. The default is to output JSON.
 
 Only one of the two methods can be supplied at one time. If both are attempted the script
 will exit with an error message.
@@ -115,5 +115,5 @@ account number, role, and region.
 ```ini
 [profile example]
 # Replace "/path/to" with the absolute path to the script on your disk.
- credential_process=/path/to/assume-aws-aws-role -q -a 123456789012 -r SSO-Example -e eu-west-1
+credential_process=/path/to/assume-aws-aws-role -q -a 123456789012 -r SSO-Example -e eu-west-1
 ```
