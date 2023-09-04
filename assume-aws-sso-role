@@ -141,12 +141,12 @@ browser_url() {
 }
 
 open_in_browser() {
-    if [ "${platform}" = Darwin ]; then
-      open "$(browser_url "$1")"
-    else
-      echo >&2 "Unsupported platform"
-      return 1
-    fi
+  if [ "${platform}" = Darwin ]; then
+    open "$(browser_url "$1")"
+  else
+    echo >&2 "Unsupported platform"
+    return 1
+  fi
 }
 
 load_credentials_from_file() {
@@ -356,7 +356,7 @@ if ! aws_credentials=$(env -u AWS_PROFILE aws sts assume-role-with-saml --durati
   echo >&2 "Acquire AWS token failed"
   ${exit_cmd} 3
 fi
-aws_token=$(echo ${aws_credentials} | jq ".Version = 1")
+aws_token=$(echo "${aws_credentials}" | jq ".Version = 1")
 echo_maybe "aws_token is ${aws_token}"
 
 expiration=$(echo "${aws_token}" | jq -r ".Expiration")
