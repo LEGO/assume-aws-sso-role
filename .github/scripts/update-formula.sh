@@ -15,7 +15,7 @@ url="$(jq --raw-output '."assume-aws-sso-role"' <<<"$latest_release")"
 
 sed -i.old \
   -e "s|version \".*\"|version \"$latest_version\"|" \
-  -e "s|url \".*\"|url \"$url\"|" \
+  -e "s|url \".*\",|url \"$url\",|" \
   -e "s|sha256 \".*\"|sha256 \"$checksum\"|" \
   assume-aws-sso-role.rb
 rm assume-aws-sso-role.rb.old
