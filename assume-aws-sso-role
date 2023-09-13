@@ -31,6 +31,7 @@ aws_role=
 aws_account=
 aws_role=
 aws_session_duration=3600
+aws_partition=aws
 
 mkdir -p "${credentials_path}"
 
@@ -94,7 +95,7 @@ role_name_from_role_arn() {
 }
 
 set_role_arn_from_account_and_role() {
-  aws_role_arn="arn:aws:iam::${aws_account}:role/${aws_role}"
+  aws_role_arn="arn:${aws_partition}:iam::${aws_account}:role/${aws_role}"
 }
 
 set_account_and_role_from_role_arn() {
@@ -105,6 +106,7 @@ set_account_and_role_from_role_arn() {
 role_info_from_profile() {
   if [ -z "${aws_region}" ]; then
     aws_region=$(aws configure get region --profile "${aws_profile}")
+    get_partition_from_region
   fi
   if [ -z "${aws_region}" ]; then
     echo_maybe "Region not found in profile ${aws_profile}."
@@ -116,6 +118,12 @@ role_info_from_profile() {
     return 1
   fi
   set_account_and_role_from_role_arn
+}
+
+get_partition_from_region() {
+  if [[ ${aws_region} = cn-* ]] then
+    aws_partition=aws-cn
+  fi
 }
 
 url_encode() {
@@ -307,6 +315,7 @@ if [ -n "${aws_profile}" ]; then
     ${exit_cmd} 3
   fi
 else
+  get_partition_from_region
   set_role_arn_from_account_and_role
 fi
 
@@ -327,7 +336,7 @@ echo_maybe "Region is ${aws_region}"
 echo_maybe "Role arn is ${aws_role_arn}"
 echo_maybe "Aws account is ${aws_account}"
 
-aws_provider="arn:aws:iam::${aws_account}:saml-provider/AzureAD"
+aws_provider="arn:${aws_partition}:iam::${aws_account}:saml-provider/AzureAD"
 
 # Obtain token for OIDCtoSAML endpoint
 echo_maybe "Getting access token"
