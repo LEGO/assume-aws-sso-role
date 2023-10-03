@@ -19,8 +19,7 @@ Copy the script to a directory that is in your `$PATH`.
 Perform the following steps:
 
 ```bash
-brew tap LEGO/assume-aws-sso-role git@github.com:LEGO/assume-aws-sso-role.git
-brew install assume-aws-sso-role
+brew install LEGO/assume-aws-sso-role/assume-aws-sso-role
 ```
 
 # Usage
