@@ -121,7 +121,7 @@ role_info_from_profile() {
 }
 
 get_partition_from_region() {
-  if [[ ${aws_region} = cn-* ]] then
+  if [[ ${aws_region} = cn-* ]]; then
     aws_partition=aws-cn
     federation_destination_url="https://console.amazonaws.cn"
     aws_federation_signin_url="https://signin.amazonaws.cn/federation"
