@@ -110,8 +110,10 @@ then it's used in the assume role step.
 ## Use as external process in AWS config profiles
 
 Add a profile using the `credential_process` setting and use the options for supplying
-account number, role, and region. Assuming `assume-aws-sso-role` is in your `$PATH`, you can use the binary without a path,
-otherwise you will need to replace `assume-aws-sso-role` with `/absolute/path/to/assume-aws-sso-role`, so that it knows where to find it.
+account number, role, and region. Assuming `assume-aws-sso-role` is in your `$PATH`, you can use the binary without a path.
+Homebrew automatically installs the binary into your `$PATH`.
+
+Otherwise you will need to replace `assume-aws-sso-role` with `/absolute/path/to/assume-aws-sso-role`, so that it knows where to find it.
 
 ```ini
 [profile example]
