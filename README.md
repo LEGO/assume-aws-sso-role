@@ -19,6 +19,7 @@ Copy the script to a directory that is in your `$PATH`.
 Perform the following steps:
 
 ```bash
+brew tap LEGO/assume-aws-sso-role https://github.com/LEGO/assume-aws-sso-role
 brew install LEGO/assume-aws-sso-role/assume-aws-sso-role
 ```
 
@@ -109,10 +110,12 @@ then it's used in the assume role step.
 ## Use as external process in AWS config profiles
 
 Add a profile using the `credential_process` setting and use the options for supplying
-account number, role, and region.
+account number, role, and region. Assuming `assume-aws-sso-role` is in your `$PATH`, you can use the binary without a path.
+Homebrew automatically installs the binary into your `$PATH`.
+
+Otherwise you will need to replace `assume-aws-sso-role` with `/absolute/path/to/assume-aws-sso-role`, so that it knows where to find it.
 
 ```ini
 [profile example]
-# Replace "/path/to" with the absolute path to the script on your disk.
-credential_process=/path/to/assume-aws-aws-role -q -a 123456789012 -r SSO-Example -e eu-west-1
+credential_process=assume-aws-sso-role -q -a 123456789012 -r SSO-Example -e eu-west-1
 ```
