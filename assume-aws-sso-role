@@ -47,7 +47,7 @@ iso_8601_to_rfc_822_date() {
 
 date_to_seconds() {
   if [ "${platform}" = Darwin ]; then
-    date -j -f "%FT%T%z" "$(iso_8601_to_rfc_822_date "$1")" "+%s"
+    /bin/date -j -f "%FT%T%z" "$(iso_8601_to_rfc_822_date "$1")" "+%s"
   else
     date -d "$1" "+%s" 2>/dev/null || gdate -d "$expiration" "+%s"
   fi
@@ -55,7 +55,7 @@ date_to_seconds() {
 
 local_time_for() {
   if [ "${platform}" = Darwin ]; then
-    date -j -f "%FT%T%z" "$(iso_8601_to_rfc_822_date "$1")"
+    /bin/date -j -f "%FT%T%z" "$(iso_8601_to_rfc_822_date "$1")"
   else
     date -d "$1"
   fi
